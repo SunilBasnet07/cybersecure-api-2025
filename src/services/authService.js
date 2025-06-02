@@ -31,7 +31,7 @@ const register = async (data) => {
     const { name, email, password } = data;
     const otp = Math.floor(Math.random() * 1000000);
     const user = await User.findOne({ email: data.email });
-    if (user?.isVerified) {
+    if (user || user?.isVerified) {
         throw {
             statusCode: 403,
             message: "User already exist."
