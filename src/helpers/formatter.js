@@ -5,6 +5,7 @@ const userFormatterData=(data)=>{
     email:data?.email,
     address:data?.address,
     number:data?.number,
+    otp:data?.otp,
     assistanceName:data?.assistanceName,
     profileImageUrl:data?.profileImageUrl,
     roles:data?.roles,

@@ -11,7 +11,7 @@ const auth = async (req, res, next) => {
         authToken = cookie.split("=")[1]
 
     }
-    console.log(authToken)
+
     await verifyToken(authToken).then((data) => {
         req.user = data
     }).catch(() => { 

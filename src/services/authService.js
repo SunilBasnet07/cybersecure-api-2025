@@ -4,7 +4,7 @@ import resendEmail from "../utils/resent.js";
 import ResetPassword from "../model/resetPassword.js";
 
 const login = async ({ email, password }) => {
-    const user = await User.findOne({ email:email });
+    const user = await User.findOne({ email: email });
     if (!user) {
         throw {
             statusCode: 403,
@@ -31,7 +31,8 @@ const register = async (data) => {
     const { name, email, password } = data;
     const otp = Math.floor(Math.random() * 1000000);
     const user = await User.findOne({ email: data.email });
-    if (user || user?.isVerified) {
+
+    if (user?.isVerified) {
         throw {
             statusCode: 403,
             message: "User already exist."
@@ -39,7 +40,7 @@ const register = async (data) => {
     }
     const subject = "OTP Verification";
     const body = `Your OTP is : <strong>${otp}<strong>`;
-    await resendEmail(email, { subject, body, name });
+    await resendEmail(email, { subject, body });
     const hashedPassword = bcrypt.hashSync(password, 10)
 
 
@@ -50,9 +51,8 @@ const register = async (data) => {
 
 
 const verifiedOTPEmail = async (userId, otp) => {
-  console.log(userId,otp)
-    const user = await User.findOne({ email: userId.email });
-    // const users = await User.find({email: userId.email });
+
+    const user = await User.findOne({ email: userId.email, otp: otp });
 
 
 
@@ -62,6 +62,12 @@ const verifiedOTPEmail = async (userId, otp) => {
             message: "User not found."
         }
     }
+    if (user.otp !== otp) {
+        throw {
+            statusCode: 403,
+            message: "Invalid OTP"
+        }
+    }
     if (user.expireAt < Date.now()) {
         throw {
             statusCode: 404,
@@ -69,17 +75,49 @@ const verifiedOTPEmail = async (userId, otp) => {
         }
     }
 
-    if (user.otp !== otp) {
-        throw {
-            statusCode: 403,
-            message: "Invalid OTP"
-        }
-    }
+
 
 
 
     await User.findByIdAndUpdate(user._id, { isVerified: true });
     return { message: "Email verified Successfyll. now you can login." }
+
+}
+
+const resendOTPEmail = async (userId) => {
+    console.log("loginUser=", userId)
+    const user = await User.findOne({ email: userId.email, otp: userId.otp });
+    console.log("user=", user);
+    if (!user) {
+        throw {
+            statusCode: 403,
+            message: "User not found."
+        }
+    }
+    if (user.otp !== userId.otp) {
+        throw {
+            statusCode: 403,
+            message: "Invalid OTP"
+        }
+    }
+    // if (user.expireAt < Date.now()) {
+    //     throw {
+    //         statusCode: 404,
+    //         message: "OTP expired"
+    //     }
+    // }
+    const newOTP = Math.floor(Math.random() * 1000000);
+    const expireAt = Date.now() + 10 * 60 * 1000;
+    if (expireAt < Date.now()) {
+        throw {
+            statusCode: 404,
+            message: "OTP expired"
+        }
+    }
+    const subject = "OTP Verification";
+    const body = `Your OTP is : <strong>${newOTP}<strong>`;
+    await resendEmail(user.email, { subject, body }, user.name);
+    return await User.findByIdAndUpdate(user._id, { otp: newOTP, expireAt }, { new: true });
 
 }
 
@@ -95,17 +133,17 @@ const forgotPassword = async ({ email }) => {
     }
 
     const resetPassword = await ResetPassword.create({ userId: user?._id, token: otp })
-   
+
     const subject = "Reset password verification link"
     const body = `${process.env.LOCAL_URL}/auth/reset-password/${resetPassword?.userId}?otp=${resetPassword?.token}`
-     await resendEmail(user.email,{subject,body, },user.name)
+    await resendEmail(user.email, { subject, body, }, user.name)
     return { message: "Reset password link has been successfull to your email" };
 
 }
 
-const resetPassword = async (id,otp,{password}) => {
+const resetPassword = async (id, otp, { password }) => {
 
-    const resetUser = await ResetPassword.findOne({userId:id,token:otp});
+    const resetUser = await ResetPassword.findOne({ userId: id, token: otp });
 
     if (otp !== resetUser?.token || resetUser.isUsed) {
         throw {
@@ -119,10 +157,10 @@ const resetPassword = async (id,otp,{password}) => {
             message: "Token expired"
         }
     }
-    const hashedPassword= bcrypt.hashSync(password,10)
+    const hashedPassword = bcrypt.hashSync(password, 10)
     await User.findByIdAndUpdate(resetUser?.userId, { password: hashedPassword })
-    await ResetPassword.findByIdAndUpdate(resetUser._id,{isUsed:true})
-    return {message:"Password reset successfully."}
+    await ResetPassword.findByIdAndUpdate(resetUser._id, { isUsed: true })
+    return { message: "Password reset successfully." }
 
 
 }
@@ -130,4 +168,4 @@ const resetPassword = async (id,otp,{password}) => {
 
 
 
-export default { login, register, verifiedOTPEmail, forgotPassword, resetPassword };
+export default { login, register, verifiedOTPEmail, forgotPassword, resetPassword, resendOTPEmail };

@@ -12,11 +12,11 @@ const login = async (req, res) => {
         if (!data.email && !data.password) return res.status(422).send("Email and Password is required.")
         if (!data.email) return res.status(422).send("Email is required.")
         if (!data.password) return res.status(422).send("Password is required.")
-        
-            if (parseInt(data?.captchaAnswer) && parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
-                return res.status(400).json('CAPTCHA answer failed');
-            }
-        
+
+        if (parseInt(data?.captchaAnswer) && parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
+            return res.status(400).json('CAPTCHA answer failed');
+        }
+
 
         const user = await authService.login(data);
         const formatterUserData = userFormatterData(user);
@@ -66,24 +66,33 @@ const register = async (req, res) => {
         res.status(error.statusCode || 500).send(error.message);
     }
 }
+
 const verifiedOTPEmail = async (req, res) => {
     const userId = req.user;
     const data = req.body;
     const otp = data.otp?.otp;
-    console.log(otp);
+
 
     try {
-
-        // if (!data.email && !data.otp) return res.status(422).send("Email and OTP is required.")
-        // if (!data.email) return res.status(422).send("Email is required.")
         if (!data.otp) return res.status(422).send("OTP is required.")
 
 
         const user = await authService.verifiedOTPEmail(userId, otp);
-        // const formatterUserData = userFormatterData(user);
-        // const token = createJWT(formatterUserData);
-        // res.cookie("authToken", token);
+      
+      
 
+        res.json(user);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+}
+
+const resendOTPEmail = async (req, res) => {
+    const userId = req.user;
+
+
+    try {
+        const user = await authService.resendOTPEmail(userId);
         res.json(user);
     } catch (error) {
         res.status(500).send(error.message);
@@ -116,4 +125,4 @@ const resetPassword = async (req, res) => {
     }
 }
 
-export { login, register, verifiedOTPEmail, forgotPassword, resetPassword }
+export { login, register, verifiedOTPEmail, forgotPassword, resetPassword ,resendOTPEmail}
