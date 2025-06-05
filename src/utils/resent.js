@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 
 
-const resendEmail = async (recipient,{subject,body,name}) => {
+const resendEmail = async (recipient,{subject,body},name) => {
     const resend = new Resend(process.env.RESENT_SECRETE_KEY);
     const { data, error } = await resend.emails.send({
         from: `${name} <onboarding@resend.dev>`,

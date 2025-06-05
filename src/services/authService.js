@@ -17,7 +17,7 @@ const login = async ({ email, password }) => {
             message: "Email not verified. Please verify OTP."
         }
     }
-    const isPasswordMatched = bcrypt.compareSync(password, user.password)
+    const isPasswordMatched = bcrypt.compareSync(password, user?.password)
     if (!isPasswordMatched) {
         throw {
             statusCode: 403,
@@ -98,7 +98,7 @@ const forgotPassword = async ({ email }) => {
    
     const subject = "Reset password verification link"
     const body = `${process.env.LOCAL_URL}/auth/reset-password/${resetPassword?.userId}?otp=${resetPassword?.token}`
-     await resendEmail(user.email,{subject,body })
+     await resendEmail(user.email,{subject,body, },user.name)
     return { message: "Reset password link has been successfull to your email" };
 
 }
