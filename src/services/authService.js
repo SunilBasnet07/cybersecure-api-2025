@@ -5,6 +5,7 @@ import ResetPassword from "../model/resetPassword.js";
 
 const login = async ({ email, password }) => {
     const user = await User.findOne({ email: email });
+   
     if (!user) {
         throw {
             statusCode: 403,
