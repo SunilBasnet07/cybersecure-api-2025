@@ -12,8 +12,11 @@ const login = async (req, res) => {
         if (!data.email && !data.password) return res.status(422).send("Email and Password is required.")
         if (!data.email) return res.status(422).send("Email is required.")
         if (!data.password) return res.status(422).send("Password is required.")
-        if (parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
-            return res.status(400).json('CAPTCHA failed');
+        if (data?.captchaAnswer) {
+            if (parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
+                return res.status(400).json('CAPTCHA answer failed');
+            }
+
         }
 
         const user = await authService.login(data);
@@ -91,27 +94,27 @@ const verifiedOTPEmail = async (req, res) => {
 const forgotPassword = async (req, res) => {
     const email = req.body;
     try {
-        const response =await authService.forgotPassword(email)
+        const response = await authService.forgotPassword(email)
         res.json(response);
-       
+
     } catch (error) {
         res.status(500).send(error.message);
     }
 }
 const resetPassword = async (req, res) => {
-    const data= req.body;
+    const data = req.body;
     const id = req.params.id;
-    const otp= req.query?.otp;
+    const otp = req.query?.otp;
     try {
-    
+
         if (!data.password) return res.status(422).send("Password is required.")
         if (!data.confirmPassword) return res.status(422).send("confirmPassword is required.")
-        const response =await authService.resetPassword(id,otp,data);
+        const response = await authService.resetPassword(id, otp, data);
         res.json(response);
-      
+
     } catch (error) {
         res.status(500).send(error.message);
     }
 }
 
-export { login, register, verifiedOTPEmail,forgotPassword,resetPassword }
+export { login, register, verifiedOTPEmail, forgotPassword, resetPassword }
