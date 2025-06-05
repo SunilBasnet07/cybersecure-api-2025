@@ -12,12 +12,11 @@ const login = async (req, res) => {
         if (!data.email && !data.password) return res.status(422).send("Email and Password is required.")
         if (!data.email) return res.status(422).send("Email is required.")
         if (!data.password) return res.status(422).send("Password is required.")
-        if (data?.captchaAnswer) {
-            if (parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
+        
+            if (parseInt(data?.captchaAnswer) && parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
                 return res.status(400).json('CAPTCHA answer failed');
             }
-
-        }
+        
 
         const user = await authService.login(data);
         const formatterUserData = userFormatterData(user);
