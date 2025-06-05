@@ -11,7 +11,7 @@ const login = async ({ email, password }) => {
             message: "User not found."
         }
     }
-    if (!user?.isVerified) {
+    if (!user || !user?.isVerified) {
         throw {
             statusCode: 403,
             message: "Email not verified. Please verify OTP."
