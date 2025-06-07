@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
     },
     expireAt: {
         type: Date,
-         default: () => new Date(Date.now() + 60000),
+        default: () => new Date(Date.now() + 60000),
     },
     isVerified: {
         type: Boolean,
@@ -56,7 +56,20 @@ const userSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now(),
-    }
+    },
+    failedLoginAttempts: {
+        type: Number,
+        default: 0
+    },
+    isLocked: {
+        type: Boolean,
+        default: false
+    },
+    lockUntil: {
+        type: Date,
+        default: null
+    },
+
 
 });
 

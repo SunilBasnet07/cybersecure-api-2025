@@ -3,30 +3,157 @@ import bcrypt from "bcrypt"
 import resendEmail from "../utils/resent.js";
 import ResetPassword from "../model/resetPassword.js";
 
+// const login = async ({ email, password }) => {
+//     const MAX_ATTEMPTS = 2;
+//     const LOCK_TIME = 1 * 60 * 1000; // 15 minutes
+//     const user = await User.findOne({ email: email });
+
+//     if (!user) {
+//         throw {
+//             statusCode: 403,
+//             message: "User not found."
+//         }
+//     }
+//     if (!user || !user?.isVerified) {
+//         throw {
+//             statusCode: 403,
+//             message: "Email not verified. Please verify OTP."
+//         }
+//     }
+
+
+//     if (user.isLocked) {
+//         if (new Date() > user.lockUntil) {
+//             // Unlock the user
+//             user.isLocked = false;
+//             user.failedLoginAttempts = 0;
+//             user.lockUntil = null;
+//             await User.findByIdAndUpdate({isLocked:false,failedLoginAttempts:0,lockUntil:null});
+
+//         } else {
+//             throw {
+//                 statusCode: 403,
+//                 message: "Account is locked. Try later."
+//             }
+//         }
+//     }
+
+
+
+
+//     const isPasswordMatched = bcrypt.compareSync(password, user?.password)
+//     if (!isPasswordMatched) {
+//         user.failedLoginAttempts += 1;
+//         if (user.failedLoginAttempts >= MAX_ATTEMPTS) {
+//             user.isLocked = true;
+//             user.lockUntil = new Date(Date.now() + LOCK_TIME);
+//             await user.save();
+//             // await sendLockEmail(user.email);
+//             return res.status(403).json({ message: "Account locked. Email sent." });
+//         }
+
+//         await user.save();
+//         throw { 
+//             statusCode: 403,
+//             message: "Email and Password do not matched."
+//         }
+//     }
+//     user.failedLoginAttempts = 0;
+//     user.isLocked = false;
+//     user.lockUntil = null;
+//    if(user.lockUntil>LOCK_TIME){
+
+//    }
+
+//     return user;
+// }
 const login = async ({ email, password }) => {
-    const user = await User.findOne({ email: email });
-   
+    const MAX_ATTEMPTS = 4;
+    const LOCK_TIME = 1 * 60 * 1000; // 1 minutes
+
+    const user = await User.findOne({ email });
+
     if (!user) {
         throw {
             statusCode: 403,
             message: "User not found."
-        }
+        };
     }
-    if (!user || !user?.isVerified) {
+
+    if (!user.isVerified) {
         throw {
             statusCode: 403,
             message: "Email not verified. Please verify OTP."
+        };
+    }
+
+    if (user.isLocked) {
+        if (new Date() > user.lockUntil) {
+            // Unlock account
+            await User.findByIdAndUpdate(user._id, {
+                isLocked: false,
+                failedLoginAttempts: 0,
+                lockUntil: null
+            });
+            user.isLocked = false;
+            user.failedLoginAttempts = 0;
+            user.lockUntil = null;
+        } else {
+            throw {
+                statusCode: 403,
+                message: "Account is locked. Try again later.",
+                lockUntil: user?.lockUntil
+            };
         }
     }
-    const isPasswordMatched = bcrypt.compareSync(password, user?.password)
+
+    const isPasswordMatched = bcrypt.compareSync(password, user.password);
     if (!isPasswordMatched) {
+        user.failedLoginAttempts += 1;
+
+        if (user.failedLoginAttempts >= MAX_ATTEMPTS) {
+            user.isLocked = true;
+            user.lockUntil = new Date(Date.now() + LOCK_TIME);
+            await user.save();
+            // await sendLockEmail(user.email);
+            const subject = "Account Locked Due to Multiple Failed Login Attempts"
+            const body = `
+                  Hi ${user?.name},<br><br>
+                  We noticed multiple failed login attempts to your account. <strong>${user?.email}</strong> <br>
+                   As a precaution, your account has been locked for 2 minutes.<br><br>
+                   If this wasn't you, please reset your password or contact support.<br><br>
+                   Stay safe,<br>
+                   The Security Team
+                    `;
+
+
+            // const body = `${process.env.LOCAL_URL}/auth/reset-password/${resetPassword?.userId}?otp=${resetPassword?.token}`
+            await resendEmail(user?.email, { subject, body, }, user?.name)
+            throw {
+                statusCode: 403,
+                message: "Account locked. Email sent."
+            };
+        }
+
+        await user.save();
         throw {
             statusCode: 403,
-            message: "Email and Password do not matched."
-        }
+            message: "Email and Password do not match."
+        };
     }
+
+    // Successful login
+    user.failedLoginAttempts = 0;
+    user.isLocked = false;
+    user.lockUntil = null;
+    await user.save();
+
     return user;
-}
+};
+
+
+
+
 const register = async (data) => {
 
     const { name, email, password } = data;

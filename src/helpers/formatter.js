@@ -8,6 +8,7 @@ const userFormatterData=(data)=>{
     otp:data?.otp,
     assistanceName:data?.assistanceName,
     profileImageUrl:data?.profileImageUrl,
+    lockUntil:data?.lockUntil,
     roles:data?.roles,
     createdAt:data?.createdAt
   }
