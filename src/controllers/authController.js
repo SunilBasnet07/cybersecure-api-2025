@@ -13,8 +13,8 @@ const login = async (req, res) => {
         if (!data.email) return res.status(422).send("Email is required.")
         if (!data.password) return res.status(422).send("Password is required.")
 
-        if (parseInt(data?.captchaAnswer) && parseInt(data?.captchaAnswer) !== parseInt(data?.correctAnswer)) {
-            return res.status(400).json('CAPTCHA answer failed');
+        if (data?.captchaAnswer !== data?.correctAnswer) {
+            return res.status(400).send('Invalid captcha answer.');
         }
 
 
@@ -37,8 +37,12 @@ const register = async (req, res) => {
         const usernameStart = data.name.slice(0, 5).toLowerCase();
         const emailStart = data.email.slice(0, 5).toLowerCase();
         const lowerPassword = data.password.toLowerCase();
-        if (captchaAnswer !== correctAnswer) {
-            return res.status(400).send('Invalid captcha answer.');
+        // if (captchaAnswer !== correctAnswer) {
+        //     return res.status(400).send('Invalid captcha answer.');
+        // }
+        
+        if (parseInt(captchaAnswer) && parseInt(captchaAnswer) !== parseInt(correctAnswer)) {
+            return res.status(400).json('CAPTCHA answer failed');
         }
         if (lowerPassword.includes(usernameStart)) {
             return res.status(422).send("Password should not contain first 5 charaters of username or email.")
@@ -114,7 +118,9 @@ const resetPassword = async (req, res) => {
     const id = req.params.id;
     const otp = req.query?.otp;
     try {
-
+      if (data?.captchaAnswer !== data?.correctAnswer) {
+            return res.status(400).send('Invalid captcha answer.');
+        }
         if (!data.password) return res.status(422).send("Password is required.")
         if (!data.confirmPassword) return res.status(422).send("confirmPassword is required.")
         const response = await authService.resetPassword(id, otp, data);
